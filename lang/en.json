@@ -1,0 +1,34 @@
+{
+  "SIDE_INITIATIVE": {
+    "settings": {
+      "enabled": {
+        "name": "Enable Side Initiative",
+        "hint": "Replace the default per-combatant initiative with the Side Initiative variant rule."
+      },
+      "aggregation": {
+        "name": "Initiative Aggregation",
+        "hint": "How the side's initiative value is derived from individual d20 rolls.",
+        "highest": "Highest Roll",
+        "average": "Average Roll (Rounded)"
+      },
+      "useModifiers": {
+        "name": "Use Initiative Modifiers",
+        "hint": "Variant: each combatant adds their initiative modifier to their d20 roll."
+      }
+    },
+    "tieDialog": {
+      "title": "Initiative Tie",
+      "content": "Both sides rolled the same initiative total. What should happen?",
+      "reroll": "Reroll",
+      "players": "Players Win",
+      "gm": "GM Wins"
+    },
+    "rollSideInitiative": "Roll Side Initiative",
+    "playerSide": "Players",
+    "enemySide": "Enemies",
+    "aggregation": {
+      "highest": "Highest",
+      "average": "Average"
+    }
+  }
+}
