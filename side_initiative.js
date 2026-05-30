@@ -47,20 +47,19 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
   // Support both ApplicationV1 (jQuery) and ApplicationV2 (HTMLElement)
   const element = htmlOrElement instanceof HTMLElement ? htmlOrElement : htmlOrElement[0];
 
-  // Tag each combatant row with its side
-  element.querySelectorAll('[data-combatant-id]').forEach(el => {
-    const combatant = combat.combatants.get(el.dataset.combatantId);
-    if (!combatant) return;
-    el.dataset.side = getSide(combatant.token?.disposition, combatant.actor?.type);
-  });
+  // Use the live app root so partial re-renders don't miss other combatant rows
+  const root = (app.element instanceof HTMLElement ? app.element : element);
 
-  // Highlight entire active side
   const activeSide = combat.combatant
     ? getSide(combat.combatant.token?.disposition, combat.combatant.actor?.type)
     : null;
 
-  element.querySelectorAll('[data-combatant-id]').forEach(el => {
-    if (activeSide && el.dataset.side === activeSide) {
+  root.querySelectorAll('[data-combatant-id]').forEach(el => {
+    const combatant = combat.combatants.get(el.dataset.combatantId);
+    if (!combatant) return;
+    const side = getSide(combatant.token?.disposition, combatant.actor?.type);
+    el.dataset.side = side;
+    if (activeSide && side === activeSide) {
       el.dataset.sideActive = 'true';
     } else {
       delete el.dataset.sideActive;
