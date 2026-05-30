@@ -1,8 +1,12 @@
 import { getSide, aggregateRolls } from '../side-utils.js';
 
 describe('getSide', () => {
-  test('friendly disposition (2) returns player side', () => {
+  test('party disposition (2) returns player side', () => {
     expect(getSide(2, 'npc')).toBe('player');
+  });
+
+  test('friendly disposition (1) returns player side', () => {
+    expect(getSide(1, 'npc')).toBe('player');
   });
 
   test('character actor type returns player side regardless of disposition', () => {

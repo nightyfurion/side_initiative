@@ -38,8 +38,10 @@ Hooks.once('init', () => {
 });
 
 Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
+  document.body.classList.toggle('side-initiative-active',
+    game.settings.get('side_initiative', 'enabled'));
   if (!game.settings.get('side_initiative', 'enabled')) return;
-  const combat = game.combat;
+  const combat = app.viewed ?? game.combat;
   if (!combat) return;
 
   // Support both ApplicationV1 (jQuery) and ApplicationV2 (HTMLElement)

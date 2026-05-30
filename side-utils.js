@@ -1,8 +1,8 @@
 // Utility functions
 
-// CONST.TOKEN_DISPOSITIONS.FRIENDLY === 2 in FoundryVTT (stable across all supported versions)
+// After — FRIENDLY=1, PARTY=2 in FoundryVTT v12+
 export function getSide(disposition, actorType) {
-  if (disposition === 2 || actorType === 'character') return 'player';
+  if (disposition >= 1 || actorType === 'character') return 'player';
   return 'enemy';
 }
 

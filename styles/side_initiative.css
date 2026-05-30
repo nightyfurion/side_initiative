@@ -8,7 +8,7 @@
 }
 
 /* Hide per-combatant roll buttons when side initiative is active */
-.combat-tracker .combatant [data-action="rollInitiative"] {
+.side-initiative-active .combat-tracker .combatant [data-action="rollInitiative"] {
   display: none;
 }
 

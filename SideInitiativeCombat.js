@@ -2,6 +2,15 @@ import { getSide, aggregateRolls } from './side-utils.js';
 import { SideInitiativeDialog } from './SideInitiativeDialog.js';
 
 export function createSideInitiativeCombat(BaseCombat) {
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   return class SideInitiativeCombat extends BaseCombat {
 
     async rollInitiative(ids, options = {}) {
@@ -87,13 +96,14 @@ export function createSideInitiativeCombat(BaseCombat) {
       );
 
       const lines = rollData.map(({ combatant, roll }) => {
+        const name = escapeHtml(combatant.name);
         if (useModifiers) {
           const die = roll.dice[0]?.total ?? roll.total;
           const mod = combatant.actor?.system?.attributes?.init?.total ?? 0;
           const sign = mod >= 0 ? '+' : '-';
-          return `${combatant.name}: ${die} ${sign} ${Math.abs(mod)} = ${roll.total}`;
+          return `${name}: ${die} ${sign} ${Math.abs(mod)} = ${roll.total}`;
         }
-        return `${combatant.name}: ${roll.total}`;
+        return `${name}: ${roll.total}`;
       });
 
       const content = `
