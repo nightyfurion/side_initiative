@@ -60,7 +60,11 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
     : null;
 
   element.querySelectorAll('[data-combatant-id]').forEach(el => {
-    el.dataset.sideActive = (activeSide && el.dataset.side === activeSide) ? 'true' : 'false';
+    if (activeSide && el.dataset.side === activeSide) {
+      el.dataset.sideActive = 'true';
+    } else {
+      delete el.dataset.sideActive;
+    }
   });
 
   // Replace the "roll all" button with a side initiative roll button
