@@ -8,6 +8,8 @@
   "esmodules": ["side_initiative.js"],
   "styles": ["styles/side_initiative.css"],
   "languages": [{ "lang": "en", "name": "English", "path": "lang/en.json" }],
+  "url": "https://github.com/nightyfurion/side_initiative",
+  "download": "https://github.com/nightyfurion/side_initiative/archive/refs/heads/main.zip",
   "relationships": {
     "systems": [{
       "id": "dnd5e",
