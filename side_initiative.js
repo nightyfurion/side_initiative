@@ -54,6 +54,15 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
     el.dataset.side = getSide(combatant.token?.disposition, combatant.actor?.type);
   });
 
+  // Highlight entire active side
+  const activeSide = combat.combatant
+    ? getSide(combat.combatant.token?.disposition, combat.combatant.actor?.type)
+    : null;
+
+  element.querySelectorAll('[data-combatant-id]').forEach(el => {
+    el.dataset.sideActive = (activeSide && el.dataset.side === activeSide) ? 'true' : 'false';
+  });
+
   // Replace the "roll all" button with a side initiative roll button
   const rollAllBtn = element.querySelector('[data-action="rollAll"]');
   if (rollAllBtn && !element.querySelector('.side-initiative-roll')) {

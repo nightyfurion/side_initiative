@@ -21,3 +21,14 @@
 .side-initiative-chat li {
   font-size: 0.9em;
 }
+
+/* Active side highlight */
+.combatant[data-side="player"][data-side-active="true"] {
+  border-left: 3px solid #4a90d9;
+  background: rgba(74, 144, 217, 0.08);
+}
+
+.combatant[data-side="enemy"][data-side-active="true"] {
+  border-left: 3px solid #c0392b;
+  background: rgba(192, 57, 43, 0.08);
+}
