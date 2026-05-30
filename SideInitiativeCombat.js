@@ -1,4 +1,4 @@
-import { getSide, aggregateRolls } from './side-utils.js';
+import { getSide, aggregateRolls, findNextSideIndex } from './side-utils.js';
 import { SideInitiativeDialog } from './SideInitiativeDialog.js';
 
 export function createSideInitiativeCombat(BaseCombat) {
@@ -119,6 +119,21 @@ export function createSideInitiativeCombat(BaseCombat) {
         rolls: rollData.map(r => r.roll),
         speaker: { alias: sideLabel },
       });
+    }
+
+    async nextTurn() {
+      if (!game.settings.get('side_initiative', 'enabled')) {
+        return super.nextTurn();
+      }
+      if (!this.combatant) return super.nextTurn();
+
+      const sides = this.turns.map(c =>
+        getSide(c.token?.disposition, c.actor?.type)
+      );
+      const nextIndex = findNextSideIndex(sides, this.turn);
+
+      if (nextIndex === -1) return this.nextRound();
+      return this.update({ turn: nextIndex });
     }
   };
 }

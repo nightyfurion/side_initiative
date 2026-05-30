@@ -1,4 +1,4 @@
-import { getSide, aggregateRolls } from '../side-utils.js';
+import { getSide, aggregateRolls, findNextSideIndex } from '../side-utils.js';
 
 describe('getSide', () => {
   test('party disposition (2) returns player side', () => {
@@ -45,5 +45,28 @@ describe('aggregateRolls', () => {
   test('empty array returns 0', () => {
     expect(aggregateRolls([], 'highest')).toBe(0);
     expect(aggregateRolls([], 'average')).toBe(0);
+  });
+});
+
+describe('findNextSideIndex', () => {
+  test('returns index of first combatant on a different side', () => {
+    expect(findNextSideIndex(['player', 'player', 'enemy', 'enemy'], 0)).toBe(2);
+  });
+
+  test('returns correct index when called mid-side', () => {
+    expect(findNextSideIndex(['player', 'player', 'enemy', 'enemy'], 1)).toBe(2);
+  });
+
+  test('returns -1 when current side is last in round', () => {
+    expect(findNextSideIndex(['enemy', 'enemy', 'player', 'player'], 2)).toBe(-1);
+    expect(findNextSideIndex(['enemy', 'enemy', 'player', 'player'], 3)).toBe(-1);
+  });
+
+  test('returns -1 for single-side combat', () => {
+    expect(findNextSideIndex(['player', 'player', 'player'], 0)).toBe(-1);
+  });
+
+  test('works when enemies go first', () => {
+    expect(findNextSideIndex(['enemy', 'enemy', 'player', 'player'], 0)).toBe(2);
   });
 });
