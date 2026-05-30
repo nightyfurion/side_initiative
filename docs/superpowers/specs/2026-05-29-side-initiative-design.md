@@ -56,7 +56,7 @@ This means friendly NPCs (allied creatures, summoned monsters with friendly disp
 
 ## Architecture: SideInitiativeCombat
 
-Extends `dnd5e.documents.Combat5e`. Registered at `init` via `CONFIG.Combat.documentClass = SideInitiativeCombat`, conditional on the `enabled` setting.
+Extends `dnd5e.documents.Combat5e`. Registered unconditionally at `init` via `CONFIG.Combat.documentClass = SideInitiativeCombat`. The subclass checks the `enabled` setting at roll time — if disabled, it calls `super.rollInitiative()` and returns immediately, falling back to dnd5e's default behavior. This avoids needing a world reload when toggling the setting.
 
 ### `rollInitiative(ids, options)`
 
