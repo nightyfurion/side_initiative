@@ -80,18 +80,23 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
 });
 
 Hooks.once('ready', () => {
-  // Foundry restricts token dragging to game.combat.combatant (the single active combatant).
-  // Patch _canDrag to allow movement for all tokens on the active side.
-  const Token = CONFIG.Token.objectClass;
-  if (typeof Token.prototype._canDrag !== 'function') return;
-  const _canDrag = Token.prototype._canDrag;
-  Token.prototype._canDrag = function(user, event) {
-    if (!game.settings.get('side_initiative', 'enabled')) return _canDrag.call(this, user, event);
-    if (_canDrag.call(this, user, event)) return true;
-    if (!game.combat?.started || !this.isOwner) return false;
-    const active = game.combat.combatant;
-    if (!active) return false;
-    const activeSide = getSide(active.token?.disposition, active.actor?.type);
-    return getSide(this.document.disposition, this.document.actor?.type) === activeSide;
-  };
+  // Patch Monk's Token Bar's per-combatant movement check to allow all tokens on the active side.
+  // MTB calls MonksTokenBar.canMoveCombatant(combatant, tokenId, token) and returns false for
+  // any combatant that isn't game.combat.combatant, blocking non-first side members from moving.
+  if (game.modules.get('monks-tokenbar')?.active) {
+    const MonksTokenBar = globalThis.MonksTokenBar;
+    if (MonksTokenBar && typeof MonksTokenBar.canMoveCombatant === 'function') {
+      const _canMoveCombatant = MonksTokenBar.canMoveCombatant;
+      MonksTokenBar.canMoveCombatant = function(combatant, tokenId, token) {
+        if (game.settings.get('side_initiative', 'enabled') && game.combat?.started) {
+          const active = game.combat.combatant;
+          if (active) {
+            const activeSide = getSide(active.token?.disposition, active.actor?.type);
+            if (getSide(combatant.token?.disposition, combatant.actor?.type) === activeSide) return true;
+          }
+        }
+        return _canMoveCombatant.call(this, combatant, tokenId, token);
+      };
+    }
+  }
 });
