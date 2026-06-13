@@ -130,74 +130,38 @@ export function createSideInitiativeCombat(BaseCombat) {
       const sides = this.turns.map(c =>
         getSide(c.token?.disposition, c.actor?.type)
       );
-      const currentSide = sides[this.turn];
       const nextIndex = findNextSideIndex(sides, this.turn);
 
       if (nextIndex === -1) return this.nextRound();
-
-      // We skip super.nextTurn() (Combat5e), so call endTurn/startTurn ourselves
-      // for the whole side so dnd5e refreshes movement and action economy for everyone.
-      for (const c of this.turns) {
-        if (getSide(c.token?.disposition, c.actor?.type) === currentSide) {
-          await c.endTurn?.(this);
-        }
-      }
-
-      await this.update({ turn: nextIndex });
-
-      const newSide = sides[nextIndex];
-      for (const c of this.turns) {
-        if (getSide(c.token?.disposition, c.actor?.type) === newSide) {
-          await c.startTurn?.(this);
-        }
-      }
-
-      return this;
+      return this.update({ turn: nextIndex });
     }
 
-    async startCombat() {
-      if (!game.settings.get('side_initiative', 'enabled')) {
-        return super.startCombat();
-      }
-      // super.startCombat() (Combat5e) calls startTurn for this.combatant; handle the rest.
-      const result = await super.startCombat();
-      if (!this.combatant) return result;
-      const activeSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
-      for (const c of this.turns) {
-        if (c.id === this.combatant.id) continue;
+    // Foundry core calls _onStartTurn/_onEndTurn on the combat when a turn changes.
+    // dnd5e hooks into these to run recovery (actions, movement, recharge).
+    // Override both to extend that recovery to the entire active side.
+
+    async _onStartTurn(combatant) {
+      await super._onStartTurn(combatant);
+      if (!game.settings.get('side_initiative', 'enabled')) return;
+      const activeSide = getSide(combatant.token?.disposition, combatant.actor?.type);
+      for (const c of this.combatants) {
+        if (c.id === combatant.id || c.isDefeated) continue;
         if (getSide(c.token?.disposition, c.actor?.type) === activeSide) {
-          await c.startTurn?.(this);
+          await super._onStartTurn(c);
         }
       }
-      return result;
     }
 
-    async nextRound() {
-      if (!game.settings.get('side_initiative', 'enabled')) {
-        return super.nextRound();
-      }
-      // End turns for non-"official" current side members before super handles the rest.
-      if (this.combatant) {
-        const currentSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
-        for (const c of this.turns) {
-          if (c.id === this.combatant.id) continue;
-          if (getSide(c.token?.disposition, c.actor?.type) === currentSide) {
-            await c.endTurn?.(this);
-          }
+    async _onEndTurn(combatant) {
+      await super._onEndTurn(combatant);
+      if (!game.settings.get('side_initiative', 'enabled')) return;
+      const endingSide = getSide(combatant.token?.disposition, combatant.actor?.type);
+      for (const c of this.combatants) {
+        if (c.id === combatant.id || c.isDefeated) continue;
+        if (getSide(c.token?.disposition, c.actor?.type) === endingSide) {
+          await super._onEndTurn(c);
         }
       }
-      const result = await super.nextRound();
-      // Start turns for non-"official" new side members (super handles this.combatant).
-      if (this.combatant) {
-        const activeSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
-        for (const c of this.turns) {
-          if (c.id === this.combatant.id) continue;
-          if (getSide(c.token?.disposition, c.actor?.type) === activeSide) {
-            await c.startTurn?.(this);
-          }
-        }
-      }
-      return result;
     }
   };
 }
