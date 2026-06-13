@@ -130,10 +130,74 @@ export function createSideInitiativeCombat(BaseCombat) {
       const sides = this.turns.map(c =>
         getSide(c.token?.disposition, c.actor?.type)
       );
+      const currentSide = sides[this.turn];
       const nextIndex = findNextSideIndex(sides, this.turn);
 
       if (nextIndex === -1) return this.nextRound();
-      return this.update({ turn: nextIndex });
+
+      // We skip super.nextTurn() (Combat5e), so call endTurn/startTurn ourselves
+      // for the whole side so dnd5e refreshes movement and action economy for everyone.
+      for (const c of this.turns) {
+        if (getSide(c.token?.disposition, c.actor?.type) === currentSide) {
+          await c.endTurn?.(this);
+        }
+      }
+
+      await this.update({ turn: nextIndex });
+
+      const newSide = sides[nextIndex];
+      for (const c of this.turns) {
+        if (getSide(c.token?.disposition, c.actor?.type) === newSide) {
+          await c.startTurn?.(this);
+        }
+      }
+
+      return this;
+    }
+
+    async startCombat() {
+      if (!game.settings.get('side_initiative', 'enabled')) {
+        return super.startCombat();
+      }
+      // super.startCombat() (Combat5e) calls startTurn for this.combatant; handle the rest.
+      const result = await super.startCombat();
+      if (!this.combatant) return result;
+      const activeSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
+      for (const c of this.turns) {
+        if (c.id === this.combatant.id) continue;
+        if (getSide(c.token?.disposition, c.actor?.type) === activeSide) {
+          await c.startTurn?.(this);
+        }
+      }
+      return result;
+    }
+
+    async nextRound() {
+      if (!game.settings.get('side_initiative', 'enabled')) {
+        return super.nextRound();
+      }
+      // End turns for non-"official" current side members before super handles the rest.
+      if (this.combatant) {
+        const currentSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
+        for (const c of this.turns) {
+          if (c.id === this.combatant.id) continue;
+          if (getSide(c.token?.disposition, c.actor?.type) === currentSide) {
+            await c.endTurn?.(this);
+          }
+        }
+      }
+      const result = await super.nextRound();
+      // Start turns for non-"official" new side members (super handles this.combatant).
+      if (this.combatant) {
+        const activeSide = getSide(this.combatant.token?.disposition, this.combatant.actor?.type);
+        for (const c of this.turns) {
+          if (c.id === this.combatant.id) continue;
+          if (getSide(c.token?.disposition, c.actor?.type) === activeSide) {
+            await c.startTurn?.(this);
+          }
+        }
+      }
+      return result;
     }
   };
 }

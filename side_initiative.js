@@ -50,20 +50,17 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
   // Use the live app root so partial re-renders don't miss other combatant rows
   const root = (app.element instanceof HTMLElement ? app.element : element);
 
+  // Use combat.turns (the array the template was built from) so IDs always match
   const activeSide = combat.combatant
     ? getSide(combat.combatant.token?.disposition, combat.combatant.actor?.type)
     : null;
 
   root.querySelectorAll('[data-combatant-id]').forEach(el => {
-    const combatant = combat.combatants.get(el.dataset.combatantId);
+    const combatant = combat.turns.find(c => c.id === el.dataset.combatantId);
     if (!combatant) return;
     const side = getSide(combatant.token?.disposition, combatant.actor?.type);
     el.dataset.side = side;
-    if (activeSide && side === activeSide) {
-      el.dataset.sideActive = 'true';
-    } else {
-      delete el.dataset.sideActive;
-    }
+    if (activeSide && side === activeSide) el.classList.add('active');
   });
 
   // Replace the "roll all" button with a side initiative roll button
