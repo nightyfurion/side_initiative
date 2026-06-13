@@ -78,3 +78,20 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
     rollAllBtn.replaceWith(btn);
   }
 });
+
+Hooks.once('ready', () => {
+  // Foundry restricts token dragging to game.combat.combatant (the single active combatant).
+  // Patch _canDrag to allow movement for all tokens on the active side.
+  const Token = CONFIG.Token.objectClass;
+  if (typeof Token.prototype._canDrag !== 'function') return;
+  const _canDrag = Token.prototype._canDrag;
+  Token.prototype._canDrag = function(user, event) {
+    if (!game.settings.get('side_initiative', 'enabled')) return _canDrag.call(this, user, event);
+    if (_canDrag.call(this, user, event)) return true;
+    if (!game.combat?.started || !this.isOwner) return false;
+    const active = game.combat.combatant;
+    if (!active) return false;
+    const activeSide = getSide(active.token?.disposition, active.actor?.type);
+    return getSide(this.document.disposition, this.document.actor?.type) === activeSide;
+  };
+});
