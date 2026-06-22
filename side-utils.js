@@ -6,6 +6,15 @@ export function getSide(disposition, actorType) {
   return 'enemy';
 }
 
+export function getCombatantSide(combatant) {
+  return getSide(combatant?.token?.disposition, combatant?.actor?.type);
+}
+
+export function isCombatantOnActiveSide(combat, combatant) {
+  if (!combat?.combatant || !combatant) return false;
+  return getCombatantSide(combatant) === getCombatantSide(combat.combatant);
+}
+
 export function aggregateRolls(rolls, mode) {
   if (rolls.length === 0) return 0;
   if (mode === 'average') {

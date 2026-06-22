@@ -1,4 +1,10 @@
-import { getSide, aggregateRolls, findNextSideIndex } from '../side-utils.js';
+import {
+  getSide,
+  getCombatantSide,
+  isCombatantOnActiveSide,
+  aggregateRolls,
+  findNextSideIndex,
+} from '../side-utils.js';
 
 describe('getSide', () => {
   test('party disposition (2) returns player side', () => {
@@ -19,6 +25,32 @@ describe('getSide', () => {
 
   test('neutral NPC returns enemy side', () => {
     expect(getSide(0, 'npc')).toBe('enemy');
+  });
+});
+
+describe('active side helpers', () => {
+  const combatant = (disposition, actorType = 'npc') => ({
+    token: { disposition },
+    actor: { type: actorType },
+  });
+
+  test('getCombatantSide reads side data from a combatant', () => {
+    expect(getCombatantSide(combatant(1))).toBe('player');
+    expect(getCombatantSide(combatant(-1))).toBe('enemy');
+  });
+
+  test('isCombatantOnActiveSide allows other combatants on the current side', () => {
+    const active = combatant(1);
+    const ally = combatant(2);
+    const enemy = combatant(-1);
+
+    expect(isCombatantOnActiveSide({ combatant: active }, ally)).toBe(true);
+    expect(isCombatantOnActiveSide({ combatant: active }, enemy)).toBe(false);
+  });
+
+  test('isCombatantOnActiveSide returns false without active combat context', () => {
+    expect(isCombatantOnActiveSide(null, combatant(1))).toBe(false);
+    expect(isCombatantOnActiveSide({ combatant: null }, combatant(1))).toBe(false);
   });
 });
 

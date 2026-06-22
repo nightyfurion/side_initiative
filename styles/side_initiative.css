@@ -22,11 +22,11 @@
   font-size: 0.9em;
 }
 
-/* Active side highlight — uses :has() so no JS state needed */
-ol.combat-tracker:has(.combatant.active[data-side="player"]) .combatant[data-side="player"] {
+/* Active side highlight */
+.combatant[data-side="player"][data-side-active="true"] {
   background: rgba(74, 144, 217, 0.08);
 }
 
-ol.combat-tracker:has(.combatant.active[data-side="enemy"]) .combatant[data-side="enemy"] {
+.combatant[data-side="enemy"][data-side-active="true"] {
   background: rgba(192, 57, 43, 0.08);
 }

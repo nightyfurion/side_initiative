@@ -1,5 +1,5 @@
 import { createSideInitiativeCombat } from './SideInitiativeCombat.js';
-import { getSide } from './side-utils.js';
+import { getCombatantSide, isCombatantOnActiveSide } from './side-utils.js';
 
 Hooks.once('init', () => {
   game.settings.register('side_initiative', 'enabled', {
@@ -52,15 +52,15 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
 
   // Use combat.turns (the array the template was built from) so IDs always match
   const activeSide = combat.combatant
-    ? getSide(combat.combatant.token?.disposition, combat.combatant.actor?.type)
+    ? getCombatantSide(combat.combatant)
     : null;
 
   root.querySelectorAll('[data-combatant-id]').forEach(el => {
     const combatant = combat.turns.find(c => c.id === el.dataset.combatantId);
     if (!combatant) return;
-    const side = getSide(combatant.token?.disposition, combatant.actor?.type);
+    const side = getCombatantSide(combatant);
     el.dataset.side = side;
-    if (activeSide && side === activeSide) el.classList.add('active');
+    el.dataset.sideActive = activeSide && side === activeSide ? 'true' : 'false';
   });
 
   // Replace the "roll all" button with a side initiative roll button
@@ -80,23 +80,30 @@ Hooks.on('renderCombatTracker', (app, htmlOrElement, context) => {
 });
 
 Hooks.once('ready', () => {
-  // Patch Monk's Token Bar's per-combatant movement check to allow all tokens on the active side.
-  // MTB calls MonksTokenBar.canMoveCombatant(combatant, tokenId, token) and returns false for
-  // any combatant that isn't game.combat.combatant, blocking non-first side members from moving.
-  if (game.modules.get('monks-tokenbar')?.active) {
-    const MonksTokenBar = globalThis.MonksTokenBar;
-    if (MonksTokenBar && typeof MonksTokenBar.canMoveCombatant === 'function') {
-      const _canMoveCombatant = MonksTokenBar.canMoveCombatant;
-      MonksTokenBar.canMoveCombatant = function(combatant, tokenId, token) {
-        if (game.settings.get('side_initiative', 'enabled') && game.combat?.started) {
-          const active = game.combat.combatant;
-          if (active) {
-            const activeSide = getSide(active.token?.disposition, active.actor?.type);
-            if (getSide(combatant.token?.disposition, combatant.actor?.type) === activeSide) return true;
-          }
-        }
-        return _canMoveCombatant.call(this, combatant, tokenId, token);
-      };
-    }
-  }
+  installMonksTokenBarPatch();
 });
+
+Hooks.once('monks-tokenbar.ready', installMonksTokenBarPatch);
+
+function installMonksTokenBarPatch() {
+  // Monk's Token Bar checks the single active combatant before allowing movement.
+  // Side initiative needs every combatant on that active side to pass the same gate.
+  if (!game.modules.get('monks-tokenbar')?.active) return;
+
+  const MonksTokenBar = globalThis.MonksTokenBar;
+  if (!MonksTokenBar || typeof MonksTokenBar.canMoveCombatant !== 'function') return;
+  if (MonksTokenBar.canMoveCombatant._sideInitiativePatched) return;
+
+  const canMoveCombatant = MonksTokenBar.canMoveCombatant;
+  MonksTokenBar.canMoveCombatant = function(combatant, tokenId, token) {
+    if (
+      game.settings.get('side_initiative', 'enabled')
+      && game.combat?.started
+      && isCombatantOnActiveSide(game.combat, combatant)
+    ) {
+      return true;
+    }
+    return canMoveCombatant.call(this, combatant, tokenId, token);
+  };
+  MonksTokenBar.canMoveCombatant._sideInitiativePatched = true;
+}
